@@ -1,0 +1,33 @@
+<div class="container">
+  <div class="card">
+    <h1>{{ title }}</h1>
+    <p class="description">Download files from AWS S3 bucket</p>
+
+    <div class="download-section">
+      <button
+        class="download-btn"
+        (click)="downloadFile()"
+        [disabled]="isDownloading">
+        <span *ngIf="!isDownloading">Download Thumbnail-AWS.jpg</span>
+        <span *ngIf="isDownloading">Downloading...</span>
+      </button>
+
+      <div *ngIf="downloadSuccess" class="success-message">
+        ✓ File downloaded successfully!
+      </div>
+
+      <div *ngIf="errorMessage" class="error-message">
+        ✗ {{ errorMessage }}
+      </div>
+    </div>
+
+    <div class="info">
+      <h3>File Information</h3>
+      <ul>
+        <li><strong>Bucket:</strong> jmz-bucket</li>
+        <li><strong>Region:</strong> us-east-2</li>
+        <li><strong>File:</strong> test-java-sdk/Thumbnail-AWS.jpg</li>
+      </ul>
+    </div>
+  </div>
+</div>
