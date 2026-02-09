@@ -6,8 +6,8 @@ Full-stack application for downloading files from AWS S3 with streaming support.
 
 ```
 spring-file-downloads/
-├── opplan-service/          # Spring Boot backend
-└── opplan-client/           # Angular frontend
+├── student-service/          # Spring Boot backend
+└── student-client/           # Angular frontend
 ```
 
 ## Architecture Overview
@@ -40,7 +40,7 @@ This project demonstrates a modern full-stack architecture for streaming file do
 ### 1. Start the Backend
 
 ```bash
-cd opplan-service
+cd student-service
 mvn clean install
 mvn spring-boot:run
 ```
@@ -50,7 +50,7 @@ Backend will start on `http://localhost:8080`
 ### 2. Start the Frontend
 
 ```bash
-cd opplan-client
+cd student-client
 npm install
 ng serve
 ```
@@ -78,7 +78,7 @@ GET http://localhost:8080/api/files/download
 
 ## Configuration
 
-### Backend (opplan-service)
+### Backend (student-service)
 
 `src/main/resources/application.yml`:
 ```yaml
@@ -89,7 +89,7 @@ aws:
     file-key: test-java-sdk/Thumbnail-AWS.jpg
 ```
 
-### Frontend (opplan-client)
+### Frontend (student-client)
 
 `src/app/services/file-download.ts`:
 ```typescript

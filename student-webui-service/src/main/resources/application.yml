@@ -1,0 +1,18 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: student-webui-service
+
+student:
+  service:
+    url: http://localhost:8088
+    download-endpoint: /api/files/download
+
+logging:
+  level:
+    com.student.webui: INFO
+    reactor.netty: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

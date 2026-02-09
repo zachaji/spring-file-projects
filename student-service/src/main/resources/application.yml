@@ -1,0 +1,19 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: student-service
+
+aws:
+  region: us-east-2
+  s3:
+    bucket-name: jmz-bucket
+    file-key: test-java-sdk/Thumbnail-AWS.jpg
+
+logging:
+  level:
+    com.student.service: INFO
+    software.amazon.awssdk: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
