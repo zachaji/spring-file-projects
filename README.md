@@ -6,26 +6,39 @@ Full-stack application for downloading files from AWS S3 with streaming support.
 
 ```
 spring-file-downloads/
-├── student-service/          # Spring Boot backend
-└── student-client/           # Angular frontend
+├── student-service/          # Spring Boot backend (upstream) - connects to AWS S3
+├── student-webui-service/    # Spring Boot gateway (middle tier) - proxies requests to student-service
+└── student-client/           # Angular frontend (downstream) - calls student-webui-service
 ```
 
 ## Architecture Overview
 
 This project demonstrates a modern full-stack architecture for streaming file downloads from AWS S3:
 
-- **Backend**: Spring Boot 3.x with WebFlux for reactive streaming
-- **Frontend**: Angular 20 with HttpClient
+- **Backend (student-service)**: Spring Boot 3.x with WebFlux — connects directly to AWS S3 via AWS SDK 2.x
+- **Gateway (student-webui-service)**: Spring Boot 3.x with WebFlux — acts as a proxy/gateway between the frontend and the backend
+- **Frontend (student-client)**: Angular 20 with HttpClient
 - **Cloud**: AWS S3 for file storage
-- **Communication**: REST API with CORS support
+- **Communication**: REST API with reactive streaming and CORS support
 
 ### Data Flow
 
-1. User clicks download button in Angular app
-2. Angular sends GET request to Spring Boot API
-3. Spring Boot streams file from S3 using AWS SDK
-4. File is streamed back to Angular client
-5. Browser saves file to downloads folder
+```
+student-client (Angular :4200)
+    ↓  HTTP GET /api/files/download
+student-webui-service (Gateway :8080)
+    ↓  WebClient GET /api/files/download
+student-service (Backend :8088)
+    ↓  AWS SDK
+AWS S3 Bucket (jmz-bucket)
+```
+
+1. User clicks download button in Angular app (port 4200)
+2. Angular sends GET request to the gateway service (port 8080)
+3. Gateway forwards the request to the backend service (port 8088) using WebClient
+4. Backend streams the file from S3 using the AWS SDK async client
+5. The stream is passed back through the gateway to the Angular client
+6. Browser saves file to downloads folder
 
 ## Prerequisites
 
@@ -37,7 +50,7 @@ This project demonstrates a modern full-stack architecture for streaming file do
 
 ## Quick Start
 
-### 1. Start the Backend
+### 1. Start the Backend (student-service)
 
 ```bash
 cd student-service
@@ -45,9 +58,19 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-Backend will start on `http://localhost:8080`
+Backend will start on `http://localhost:8088`
 
-### 2. Start the Frontend
+### 2. Start the Gateway (student-webui-service)
+
+```bash
+cd student-webui-service
+mvn clean install
+mvn spring-boot:run
+```
+
+Gateway will start on `http://localhost:8080`
+
+### 3. Start the Frontend
 
 ```bash
 cd student-client
@@ -57,7 +80,7 @@ ng serve
 
 Frontend will start on `http://localhost:4200`
 
-### 3. Test the Application
+### 4. Test the Application
 
 1. Open browser to `http://localhost:4200`
 2. Click "Download Thumbnail-AWS.jpg" button
@@ -65,16 +88,27 @@ Frontend will start on `http://localhost:4200`
 
 ## API Endpoints
 
-### Download File
+### Gateway (student-webui-service - port 8080)
+
 ```
 GET http://localhost:8080/api/files/download
 ```
 
-**Response**: Binary stream (image/jpeg)
+Entry point for the Angular frontend. Proxies the request to the backend service.
+
+**Response**: Binary stream (application/octet-stream)
 
 **Headers**:
 - `Content-Type: application/octet-stream`
 - `Content-Disposition: attachment; filename="Thumbnail-AWS.jpg"`
+
+### Backend (student-service - port 8088)
+
+```
+GET http://localhost:8088/api/files/download
+```
+
+Connects directly to AWS S3 and streams the file. Called by the gateway, not by the frontend directly.
 
 ## Configuration
 
@@ -82,11 +116,27 @@ GET http://localhost:8080/api/files/download
 
 `src/main/resources/application.yml`:
 ```yaml
+server:
+  port: 8088
+
 aws:
   region: us-east-2
   s3:
     bucket-name: jmz-bucket
     file-key: test-java-sdk/Thumbnail-AWS.jpg
+```
+
+### Gateway (student-webui-service)
+
+`src/main/resources/application.yml`:
+```yaml
+server:
+  port: 8080
+
+student:
+  service:
+    url: http://localhost:8088
+    download-endpoint: /api/files/download
 ```
 
 ### Frontend (student-client)
@@ -98,14 +148,21 @@ private apiUrl = 'http://localhost:8080/api/files/download';
 
 ## Technologies Used
 
-### Backend
+### Backend (student-service)
 - Spring Boot 3.2.2
 - Spring WebFlux (Reactive Streaming)
 - AWS SDK for Java 2.x
 - Project Lombok
 - Maven
 
-### Frontend
+### Gateway (student-webui-service)
+- Spring Boot 3.2.2
+- Spring WebFlux (Reactive Streaming)
+- WebClient (non-blocking HTTP client)
+- Project Lombok
+- Maven
+
+### Frontend (student-client)
 - Angular 20.0.4
 - TypeScript
 - RxJS
@@ -114,19 +171,26 @@ private apiUrl = 'http://localhost:8080/api/files/download';
 
 ## Features
 
-### Backend
-✅ Reactive streaming with Spring WebFlux
-✅ AWS S3 async client integration
-✅ CORS configuration for Angular
-✅ Exception handling and logging
-✅ Memory-efficient streaming
+### Backend (student-service)
+- Reactive streaming with Spring WebFlux
+- AWS S3 async client integration
+- Memory-efficient streaming via Flux<DataBuffer>
+- Exception handling and logging
 
-### Frontend
-✅ Modern Angular standalone components
-✅ Reactive HTTP client
-✅ Clean and responsive UI
-✅ Download progress indication
-✅ Success and error handling
+### Gateway (student-webui-service)
+- Gateway pattern for service orchestration
+- Reactive request forwarding with WebClient
+- CORS configuration for Angular (localhost:4200)
+- Streaming proxy (no buffering, passes reactive streams through)
+- Extensible for cross-cutting concerns (auth, rate limiting, etc.)
+- Exception handling and logging
+
+### Frontend (student-client)
+- Modern Angular standalone components
+- Reactive HTTP client
+- Clean and responsive UI
+- Download progress indication
+- Success and error handling
 
 ## Security Notes
 
@@ -137,10 +201,15 @@ private apiUrl = 'http://localhost:8080/api/files/download';
 
 ## Troubleshooting
 
-### Backend won't start
+### Backend (student-service) won't start
 - Verify Java 17 is installed: `java -version`
 - Check AWS credentials are configured
+- Ensure port 8088 is available
+
+### Gateway (student-webui-service) won't start
+- Verify Java 17 is installed: `java -version`
 - Ensure port 8080 is available
+- Verify student-service is running on port 8088
 
 ### Frontend won't start
 - Verify Node.js is installed: `node -v`
@@ -148,7 +217,7 @@ private apiUrl = 'http://localhost:8080/api/files/download';
 - Ensure port 4200 is available
 
 ### Download fails
-- Verify backend is running on port 8080
+- Verify both backend (8088) and gateway (8080) are running
 - Check AWS credentials have S3 read permissions
 - Verify S3 bucket and file exist
 - Check browser console for errors
