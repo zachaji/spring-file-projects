@@ -1,32 +1,51 @@
 package com.student.webui.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
+import org.springframework.web.client.RestClient;
+
+import java.io.InputStream;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FileGatewayService {
 
-    private final WebClient webClient;
+    private final RestClient restClient;
 
-    @Value("${opplan.service.download-endpoint}")
+    @Value("${student.service.download-endpoint}")
     private String downloadEndpoint;
 
-    public Flux<DataBuffer> downloadFile() {
-        log.info("Gateway: Forwarding download request to opplan-service");
+    @Value("${student.service.download-bytes-endpoint}")
+    private String downloadBytesEndpoint;
 
-        return webClient
+    public FileGatewayService(RestClient restClient) {
+        this.restClient = restClient;
+    }
+
+    public InputStream downloadFile() {
+        log.info("Gateway: Forwarding download request to student-service");
+
+        return restClient
                 .get()
                 .uri(downloadEndpoint)
+                .exchange((request, response) -> {
+                    if (response.getStatusCode().isError()) {
+                        log.error("Gateway: Error response from student-service: {}", response.getStatusCode());
+                        throw new RuntimeException("Failed to download file from student-service: " + response.getStatusCode());
+                    }
+                    log.info("Gateway: Received response from student-service, streaming to client");
+                    return response.getBody();
+                }, false);
+    }
+
+    public byte[] downloadFileAsBytes() {
+        log.info("Gateway: Forwarding byte[] download request to student-service");
+
+        return restClient
+                .get()
+                .uri(downloadBytesEndpoint)
                 .retrieve()
-                .bodyToFlux(DataBuffer.class)
-                .doOnComplete(() -> log.info("Gateway: File streaming completed"))
-                .doOnError(error -> log.error("Gateway: Error streaming file from opplan-service", error));
+                .body(byte[].class);
     }
 }

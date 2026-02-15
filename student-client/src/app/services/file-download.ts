@@ -7,11 +7,19 @@ import { Observable } from 'rxjs';
 })
 export class FileDownload {
   private apiUrl = 'http://localhost:8080/api/files/download';
+  private apiBytesUrl = 'http://localhost:8080/api/files/download-bytes';
 
   constructor(private http: HttpClient) {}
 
   downloadFile(): Observable<Blob> {
     return this.http.get(this.apiUrl, {
+      responseType: 'blob',
+      observe: 'body'
+    });
+  }
+
+  downloadFileAsBytes(): Observable<Blob> {
+    return this.http.get(this.apiBytesUrl, {
       responseType: 'blob',
       observe: 'body'
     });

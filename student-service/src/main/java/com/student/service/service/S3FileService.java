@@ -2,40 +2,33 @@ package com.student.service.service;
 
 import com.student.service.exception.FileDownloadException;
 import lombok.extern.slf4j.Slf4j;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import software.amazon.awssdk.core.async.AsyncResponseTransformer;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import java.nio.ByteBuffer;
+import java.io.IOException;
+import java.io.InputStream;
 
 @Slf4j
 @Service
 public class S3FileService {
 
-    private final S3AsyncClient s3AsyncClient;
+    private final S3Client s3Client;
     private final String bucketName;
     private final String fileKey;
-    private final DefaultDataBufferFactory bufferFactory;
 
     public S3FileService(
-            S3AsyncClient s3AsyncClient,
+            S3Client s3Client,
             @Value("${aws.s3.bucket-name}") String bucketName,
             @Value("${aws.s3.file-key}") String fileKey) {
-        this.s3AsyncClient = s3AsyncClient;
+        this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.fileKey = fileKey;
-        this.bufferFactory = new DefaultDataBufferFactory();
     }
 
-    public Flux<DataBuffer> downloadFile() {
+    public InputStream downloadFile() {
         log.info("Starting file download from S3: bucket={}, key={}", bucketName, fileKey);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
@@ -43,50 +36,36 @@ public class S3FileService {
                 .key(fileKey)
                 .build();
 
-        return Flux.create(sink -> {
-            s3AsyncClient.getObject(
-                    getObjectRequest,
-                    AsyncResponseTransformer.toPublisher()
-            ).whenComplete((responsePublisher, throwable) -> {
-                if (throwable != null) {
-                    log.error("Error downloading file from S3", throwable);
-                    if (throwable.getCause() instanceof S3Exception) {
-                        S3Exception s3Exception = (S3Exception) throwable.getCause();
-                        sink.error(new FileDownloadException(
-                                "S3 Error: " + s3Exception.awsErrorDetails().errorMessage(),
-                                s3Exception
-                        ));
-                    } else {
-                        sink.error(new FileDownloadException("Failed to download file from S3", throwable));
-                    }
-                } else {
-                    responsePublisher.subscribe(new Subscriber<ByteBuffer>() {
-                        @Override
-                        public void onSubscribe(Subscription subscription) {
-                            subscription.request(Long.MAX_VALUE);
-                        }
+        try {
+            return s3Client.getObject(getObjectRequest);
+        } catch (S3Exception e) {
+            log.error("Error downloading file from S3", e);
+            throw new FileDownloadException("S3 Error: " + e.awsErrorDetails().errorMessage(), e);
+        } catch (Exception e) {
+            log.error("Error downloading file from S3", e);
+            throw new FileDownloadException("Failed to download file from S3", e);
+        }
+    }
 
-                        @Override
-                        public void onNext(ByteBuffer byteBuffer) {
-                            DataBuffer dataBuffer = bufferFactory.wrap(byteBuffer);
-                            sink.next(dataBuffer);
-                        }
+    public byte[] downloadFileAsBytes() {
+        log.info("Starting byte[] file download from S3: bucket={}, key={}", bucketName, fileKey);
 
-                        @Override
-                        public void onError(Throwable error) {
-                            log.error("Error during file streaming from S3", error);
-                            sink.error(new FileDownloadException("Error streaming file from S3", error));
-                        }
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileKey)
+                .build();
 
-                        @Override
-                        public void onComplete() {
-                            log.info("File download completed successfully");
-                            sink.complete();
-                        }
-                    });
-                }
-            });
-        });
+        try (InputStream inputStream = s3Client.getObject(getObjectRequest)) {
+            byte[] bytes = inputStream.readAllBytes();
+            log.info("Byte[] file download completed, size={} bytes", bytes.length);
+            return bytes;
+        } catch (S3Exception e) {
+            log.error("Error downloading file as bytes from S3", e);
+            throw new FileDownloadException("S3 Error: " + e.awsErrorDetails().errorMessage(), e);
+        } catch (IOException e) {
+            log.error("Error reading file bytes from S3", e);
+            throw new FileDownloadException("Failed to read file bytes from S3", e);
+        }
     }
 
     public String getFileName() {

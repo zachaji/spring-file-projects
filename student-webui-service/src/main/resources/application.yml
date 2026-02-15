@@ -9,6 +9,7 @@ student:
   service:
     url: http://localhost:8088
     download-endpoint: /api/files/download
+    download-bytes-endpoint: /api/files/download-bytes
 
 logging:
   level:

@@ -3,18 +3,18 @@ package com.student.webui.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 @Configuration
-public class WebClientConfig {
+public class RestClientConfig {
 
-    @Value("${opplan.service.url}")
-    private String opplanServiceUrl;
+    @Value("${student.service.url}")
+    private String studentServiceUrl;
 
     @Bean
-    public WebClient webClient(WebClient.Builder builder) {
+    public RestClient restClient(RestClient.Builder builder) {
         return builder
-                .baseUrl(opplanServiceUrl)
+                .baseUrl(studentServiceUrl)
                 .build();
     }
 }

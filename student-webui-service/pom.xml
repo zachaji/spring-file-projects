@@ -23,10 +23,10 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Starter WebFlux for reactive streaming -->
+        <!-- Spring Boot Starter Web for servlet-based streaming -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- Lombok for reducing boilerplate -->
@@ -43,12 +43,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Reactor Test -->
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

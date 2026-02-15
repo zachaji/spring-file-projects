@@ -37,22 +37,53 @@ h1 {
   margin-bottom: 30px;
 }
 
+.button-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.label-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 15px;
+}
+
+.btn-label {
+  width: 200px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #999;
+}
+
 .download-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 15px 40px;
+  padding: 15px 20px;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  margin-bottom: 15px;
+  width: 200px;
 }
 
-.download-btn:hover:not(:disabled) {
+.streaming-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.streaming-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.bytes-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.bytes-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
 }
 
 .download-btn:disabled {

@@ -4,20 +4,43 @@
     <p class="description">Download files from AWS S3 bucket</p>
 
     <div class="download-section">
-      <button
-        class="download-btn"
-        (click)="downloadFile()"
-        [disabled]="isDownloading">
-        <span *ngIf="!isDownloading">Download Thumbnail-AWS.jpg</span>
-        <span *ngIf="isDownloading">Downloading...</span>
-      </button>
+      <div class="button-row">
+        <button
+          class="download-btn streaming-btn"
+          (click)="downloadFile()"
+          [disabled]="isDownloading">
+          <span *ngIf="!isDownloading">Streaming Download</span>
+          <span *ngIf="isDownloading">Downloading...</span>
+        </button>
+
+        <button
+          class="download-btn bytes-btn"
+          (click)="downloadFileAsBytes()"
+          [disabled]="isBytesDownloading">
+          <span *ngIf="!isBytesDownloading">Byte[] Download</span>
+          <span *ngIf="isBytesDownloading">Downloading...</span>
+        </button>
+      </div>
+
+      <div class="label-row">
+        <span class="btn-label">StreamingResponseBody</span>
+        <span class="btn-label">ResponseEntity&lt;byte[]&gt;</span>
+      </div>
 
       <div *ngIf="downloadSuccess" class="success-message">
-        ✓ File downloaded successfully!
+        &#10003; Streaming download completed successfully!
       </div>
 
       <div *ngIf="errorMessage" class="error-message">
-        ✗ {{ errorMessage }}
+        &#10007; {{ errorMessage }}
+      </div>
+
+      <div *ngIf="bytesDownloadSuccess" class="success-message">
+        &#10003; Byte[] download completed successfully!
+      </div>
+
+      <div *ngIf="bytesErrorMessage" class="error-message">
+        &#10007; {{ bytesErrorMessage }}
       </div>
     </div>
 
