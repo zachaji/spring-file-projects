@@ -1,6 +1,7 @@
 package com.student.webui.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -11,6 +12,7 @@ import java.io.InputStream;
 @Service
 public class FileGatewayService {
 
+    private final RestClient streamingRestClient;
     private final RestClient restClient;
 
     @Value("${student.service.download-endpoint}")
@@ -19,14 +21,17 @@ public class FileGatewayService {
     @Value("${student.service.download-bytes-endpoint}")
     private String downloadBytesEndpoint;
 
-    public FileGatewayService(RestClient restClient) {
+    public FileGatewayService(
+            @Qualifier("streamingRestClient") RestClient streamingRestClient,
+            RestClient restClient) {
+        this.streamingRestClient = streamingRestClient;
         this.restClient = restClient;
     }
 
     public InputStream downloadFile() {
-        log.info("Gateway: Forwarding download request to student-service");
+        log.info("Gateway: Forwarding download request to student-service (pooled connection)");
 
-        return restClient
+        return streamingRestClient
                 .get()
                 .uri(downloadEndpoint)
                 .exchange((request, response) -> {
@@ -40,7 +45,7 @@ public class FileGatewayService {
     }
 
     public byte[] downloadFileAsBytes() {
-        log.info("Gateway: Forwarding byte[] download request to student-service");
+        log.info("Gateway: Forwarding byte[] download request to student-service (default connection)");
 
         return restClient
                 .get()
