@@ -6,6 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+
 import java.io.InputStream;
 
 @Slf4j
@@ -20,6 +25,9 @@ public class FileGatewayService {
 
     @Value("${student.service.download-bytes-endpoint}")
     private String downloadBytesEndpoint;
+
+    @Value("${student.service.download-resource-endpoint}")
+    private String downloadResourceEndpoint;
 
     public FileGatewayService(
             @Qualifier("streamingRestClient") RestClient streamingRestClient,
@@ -52,5 +60,31 @@ public class FileGatewayService {
                 .uri(downloadBytesEndpoint)
                 .retrieve()
                 .body(byte[].class);
+    }
+
+    public record FileResource(Resource resource, String fileName, long contentLength) {}
+
+    public FileResource downloadFileAsResource() {
+        log.info("Gateway: Forwarding Resource download request to student-service (streaming connection)");
+
+        return streamingRestClient
+                .get()
+                .uri(downloadResourceEndpoint)
+                .exchange((request, response) -> {
+                    if (response.getStatusCode().isError()) {
+                        log.error("Gateway: Error response from student-service: {}", response.getStatusCode());
+                        throw new RuntimeException("Failed to download file from student-service: " + response.getStatusCode());
+                    }
+
+                    HttpHeaders headers = response.getHeaders();
+                    ContentDisposition contentDisposition = headers.getContentDisposition();
+                    String fileName = contentDisposition.getFilename();
+                    long contentLength = headers.getContentLength();
+
+                    Resource resource = new InputStreamResource(response.getBody());
+
+                    log.info("Gateway: Streaming as Resource, fileName={}, size={} bytes", fileName, contentLength);
+                    return new FileResource(resource, fileName, contentLength);
+                }, false);
     }
 }

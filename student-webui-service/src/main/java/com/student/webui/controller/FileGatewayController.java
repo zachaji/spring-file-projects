@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import org.springframework.core.io.Resource;
+
 import java.io.InputStream;
 
 @Slf4j
@@ -75,6 +77,33 @@ public class FileGatewayController {
         } catch (Exception e) {
             log.error("Gateway: Error downloading file as byte[]", e);
             throw new RuntimeException("Failed to download file as byte[]", e);
+        }
+    }
+
+    @GetMapping(value = "/download-resource", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<Resource> downloadFileAsResource() {
+        log.info("Gateway: Received Resource download request from client");
+
+        try {
+            FileGatewayService.FileResource fileResource = fileGatewayService.downloadFileAsResource();
+            Resource resource = fileResource.resource();
+            String fileName = fileResource.fileName();
+            long contentLength = fileResource.contentLength();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDispositionFormData("attachment", fileName);
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentLength(contentLength);
+
+            log.info("Gateway: Returning file as Resource, fileName={}, size={} bytes", fileName, contentLength);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("Gateway: Error downloading file as Resource", e);
+            throw new RuntimeException("Failed to download file as Resource", e);
         }
     }
 

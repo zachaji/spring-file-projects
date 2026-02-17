@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 export class FileDownload {
   private apiUrl = 'http://localhost:8080/api/files/download';
   private apiBytesUrl = 'http://localhost:8080/api/files/download-bytes';
+  private apiResourceUrl = 'http://localhost:8080/api/files/download-resource';
 
   constructor(private http: HttpClient) {}
 
@@ -20,6 +21,13 @@ export class FileDownload {
 
   downloadFileAsBytes(): Observable<Blob> {
     return this.http.get(this.apiBytesUrl, {
+      responseType: 'blob',
+      observe: 'body'
+    });
+  }
+
+  downloadFileAsResource(): Observable<Blob> {
+    return this.http.get(this.apiResourceUrl, {
       responseType: 'blob',
       observe: 'body'
     });

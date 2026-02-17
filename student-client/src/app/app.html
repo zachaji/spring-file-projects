@@ -20,11 +20,20 @@
           <span *ngIf="!isBytesDownloading">Byte[] Download</span>
           <span *ngIf="isBytesDownloading">Downloading...</span>
         </button>
+
+        <button
+          class="download-btn resource-btn"
+          (click)="downloadFileAsResource()"
+          [disabled]="isResourceDownloading">
+          <span *ngIf="!isResourceDownloading">Resource Download</span>
+          <span *ngIf="isResourceDownloading">Downloading...</span>
+        </button>
       </div>
 
       <div class="label-row">
         <span class="btn-label">StreamingResponseBody</span>
         <span class="btn-label">ResponseEntity&lt;byte[]&gt;</span>
+        <span class="btn-label">ResponseEntity&lt;Resource&gt;</span>
       </div>
 
       <div *ngIf="downloadSuccess" class="success-message">
@@ -41,6 +50,14 @@
 
       <div *ngIf="bytesErrorMessage" class="error-message">
         &#10007; {{ bytesErrorMessage }}
+      </div>
+
+      <div *ngIf="resourceDownloadSuccess" class="success-message">
+        &#10003; Resource download completed successfully!
+      </div>
+
+      <div *ngIf="resourceErrorMessage" class="error-message">
+        &#10007; {{ resourceErrorMessage }}
       </div>
     </div>
 

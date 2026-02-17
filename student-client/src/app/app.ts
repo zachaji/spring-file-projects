@@ -21,6 +21,11 @@ export class App {
   bytesDownloadSuccess = false;
   bytesErrorMessage = '';
 
+  // Resource download state
+  isResourceDownloading = false;
+  resourceDownloadSuccess = false;
+  resourceErrorMessage = '';
+
   constructor(private fileDownloadService: FileDownload) {}
 
   downloadFile(): void {
@@ -59,6 +64,26 @@ export class App {
         this.isBytesDownloading = false;
         this.bytesErrorMessage = 'Failed to download file. Please try again.';
         console.error('Error downloading file (byte[]):', error);
+      }
+    });
+  }
+
+  downloadFileAsResource(): void {
+    this.isResourceDownloading = true;
+    this.resourceDownloadSuccess = false;
+    this.resourceErrorMessage = '';
+
+    this.fileDownloadService.downloadFileAsResource().subscribe({
+      next: (blob: Blob) => {
+        this.fileDownloadService.saveFile(blob, 'Thumbnail-AWS.jpg');
+        this.isResourceDownloading = false;
+        this.resourceDownloadSuccess = true;
+        console.log('File downloaded successfully (Resource)');
+      },
+      error: (error) => {
+        this.isResourceDownloading = false;
+        this.resourceErrorMessage = 'Failed to download file. Please try again.';
+        console.error('Error downloading file (Resource):', error);
       }
     });
   }
