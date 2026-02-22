@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,16 +24,19 @@ public class FileGatewayController {
 
     private final FileGatewayService fileGatewayService;
 
-    @GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/download")
     public ResponseEntity<StreamingResponseBody> downloadFile() {
         log.info("Gateway: Received download request from client");
 
         try {
-            InputStream inputStream = fileGatewayService.downloadFile();
+            FileGatewayService.StreamingFile streamingFile = fileGatewayService.downloadFile();
+            InputStream inputStream = streamingFile.inputStream();
+            HttpHeaders upstreamHeaders = streamingFile.upstreamHeaders();
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentDispositionFormData("attachment", "Thumbnail-AWS.jpg");
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentType(upstreamHeaders.getContentType());
+            headers.set(HttpHeaders.CONTENT_DISPOSITION,
+                    upstreamHeaders.getFirst(HttpHeaders.CONTENT_DISPOSITION));
 
             log.info("Gateway: Streaming file to client");
 
@@ -56,17 +58,19 @@ public class FileGatewayController {
         }
     }
 
-    @GetMapping(value = "/download-bytes", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/download-bytes")
     public ResponseEntity<byte[]> downloadFileAsBytes() {
         log.info("Gateway: Received byte[] download request from client");
 
         try {
-            byte[] fileData = fileGatewayService.downloadFileAsBytes();
+            FileGatewayService.BytesFile bytesFile = fileGatewayService.downloadFileAsBytes();
+            byte[] fileData = bytesFile.data();
+            HttpHeaders upstreamHeaders = bytesFile.upstreamHeaders();
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentDispositionFormData("attachment", "Thumbnail-AWS.jpg");
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentLength(fileData.length);
+            headers.setContentType(upstreamHeaders.getContentType());
+            headers.set(HttpHeaders.CONTENT_DISPOSITION,
+                    upstreamHeaders.getFirst(HttpHeaders.CONTENT_DISPOSITION));
 
             log.info("Gateway: Returning file as byte[], size={} bytes", fileData.length);
 
@@ -80,22 +84,21 @@ public class FileGatewayController {
         }
     }
 
-    @GetMapping(value = "/download-resource", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/download-resource")
     public ResponseEntity<Resource> downloadFileAsResource() {
         log.info("Gateway: Received Resource download request from client");
 
         try {
             FileGatewayService.FileResource fileResource = fileGatewayService.downloadFileAsResource();
             Resource resource = fileResource.resource();
-            String fileName = fileResource.fileName();
-            long contentLength = fileResource.contentLength();
+            HttpHeaders upstreamHeaders = fileResource.upstreamHeaders();
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentDispositionFormData("attachment", fileName);
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentLength(contentLength);
+            headers.setContentType(upstreamHeaders.getContentType());
+            headers.set(HttpHeaders.CONTENT_DISPOSITION,
+                    upstreamHeaders.getFirst(HttpHeaders.CONTENT_DISPOSITION));
 
-            log.info("Gateway: Returning file as Resource, fileName={}, size={} bytes", fileName, contentLength);
+            log.info("Gateway: Returning file as Resource");
 
             return ResponseEntity.ok()
                     .headers(headers)
@@ -104,6 +107,32 @@ public class FileGatewayController {
         } catch (Exception e) {
             log.error("Gateway: Error downloading file as Resource", e);
             throw new RuntimeException("Failed to download file as Resource", e);
+        }
+    }
+
+    @GetMapping(value = "/download-byte-array-resource")
+    public ResponseEntity<Resource> downloadFileAsByteArrayResource() {
+        log.info("Gateway: Received ByteArrayResource download request from client");
+
+        try {
+            FileGatewayService.FileResource fileResource = fileGatewayService.downloadFileAsByteArrayResource();
+            Resource resource = fileResource.resource();
+            HttpHeaders upstreamHeaders = fileResource.upstreamHeaders();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(upstreamHeaders.getContentType());
+            headers.set(HttpHeaders.CONTENT_DISPOSITION,
+                    upstreamHeaders.getFirst(HttpHeaders.CONTENT_DISPOSITION));
+
+            log.info("Gateway: Returning file as ByteArrayResource");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("Gateway: Error downloading file as ByteArrayResource", e);
+            throw new RuntimeException("Failed to download file as ByteArrayResource", e);
         }
     }
 

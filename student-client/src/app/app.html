@@ -28,12 +28,22 @@
           <span *ngIf="!isResourceDownloading">Resource Download</span>
           <span *ngIf="isResourceDownloading">Downloading...</span>
         </button>
+
+        <button
+          class="download-btn byte-array-resource-btn"
+          (click)="downloadFileAsByteArrayResource()"
+          [disabled]="isByteArrayResourceDownloading">
+          <span *ngIf="!isByteArrayResourceDownloading">ByteArray Resource</span>
+          <span *ngIf="isByteArrayResourceDownloading">Downloading...</span>
+        </button>
+
       </div>
 
       <div class="label-row">
         <span class="btn-label">StreamingResponseBody</span>
         <span class="btn-label">ResponseEntity&lt;byte[]&gt;</span>
         <span class="btn-label">ResponseEntity&lt;Resource&gt;</span>
+        <span class="btn-label">ByteArrayResource</span>
       </div>
 
       <div *ngIf="downloadSuccess" class="success-message">
@@ -59,6 +69,15 @@
       <div *ngIf="resourceErrorMessage" class="error-message">
         &#10007; {{ resourceErrorMessage }}
       </div>
+
+      <div *ngIf="byteArrayResourceDownloadSuccess" class="success-message">
+        &#10003; ByteArrayResource download completed successfully!
+      </div>
+
+      <div *ngIf="byteArrayResourceErrorMessage" class="error-message">
+        &#10007; {{ byteArrayResourceErrorMessage }}
+      </div>
+
     </div>
 
     <div class="info">
@@ -66,7 +85,7 @@
       <ul>
         <li><strong>Bucket:</strong> jmz-bucket</li>
         <li><strong>Region:</strong> us-east-2</li>
-        <li><strong>File:</strong> test-java-sdk/Thumbnail-AWS.jpg</li>
+        <li><strong>File:</strong> test-java-sdk/200mb.pdf</li>
       </ul>
     </div>
   </div>

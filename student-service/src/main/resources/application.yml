@@ -2,6 +2,9 @@ server:
   port: 8088
 
 spring:
+  mvc:
+    async:
+      request-timeout: 600000
   application:
     name: student-service
 
@@ -9,7 +12,7 @@ aws:
   region: us-east-2
   s3:
     bucket-name: jmz-bucket
-    file-key: test-java-sdk/Thumbnail-AWS.jpg
+    file-key: test-java-sdk/test.txt
 
 logging:
   level:

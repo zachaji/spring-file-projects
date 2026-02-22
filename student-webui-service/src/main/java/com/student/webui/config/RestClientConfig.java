@@ -1,8 +1,10 @@
 package com.student.webui.config;
 
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,8 +25,13 @@ public class RestClientConfig {
         connectionManager.setMaxTotal(50);
         connectionManager.setDefaultMaxPerRoute(20);
 
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setResponseTimeout(Timeout.ofMinutes(10))
+                .build();
+
         CloseableHttpClient httpClient = HttpClients.custom()
                 .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfig)
                 .build();
 
         HttpComponentsClientHttpRequestFactory requestFactory =
@@ -35,4 +42,5 @@ public class RestClientConfig {
                 .requestFactory(requestFactory)
                 .build();
     }
+
 }

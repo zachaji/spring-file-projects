@@ -12,7 +12,7 @@
   border-radius: 12px;
   padding: 40px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
+  max-width: 920px;
   width: 100%;
 }
 
@@ -93,6 +93,15 @@ h1 {
 .resource-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(56, 249, 215, 0.4);
+}
+
+.byte-array-resource-btn {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.byte-array-resource-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(250, 112, 154, 0.4);
 }
 
 .download-btn:disabled {

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -9,28 +9,47 @@ export class FileDownload {
   private apiUrl = 'http://localhost:8080/api/files/download';
   private apiBytesUrl = 'http://localhost:8080/api/files/download-bytes';
   private apiResourceUrl = 'http://localhost:8080/api/files/download-resource';
+  private apiByteArrayResourceUrl = 'http://localhost:8080/api/files/download-byte-array-resource';
 
   constructor(private http: HttpClient) {}
 
-  downloadFile(): Observable<Blob> {
+  downloadFile(): Observable<HttpResponse<Blob>> {
     return this.http.get(this.apiUrl, {
       responseType: 'blob',
-      observe: 'body'
+      observe: 'response'
     });
   }
 
-  downloadFileAsBytes(): Observable<Blob> {
+  downloadFileAsBytes(): Observable<HttpResponse<Blob>> {
     return this.http.get(this.apiBytesUrl, {
       responseType: 'blob',
-      observe: 'body'
+      observe: 'response'
     });
   }
 
-  downloadFileAsResource(): Observable<Blob> {
+  downloadFileAsResource(): Observable<HttpResponse<Blob>> {
     return this.http.get(this.apiResourceUrl, {
       responseType: 'blob',
-      observe: 'body'
+      observe: 'response'
     });
+  }
+
+  downloadFileAsByteArrayResource(): Observable<HttpResponse<Blob>> {
+    return this.http.get(this.apiByteArrayResourceUrl, {
+      responseType: 'blob',
+      observe: 'response'
+    });
+  }
+
+  extractFilename(response: HttpResponse<Blob>): string {
+    const contentDisposition = response.headers.get('Content-Disposition');
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?([^";\s]+)"?/);
+      if (match) {
+        return match[1];
+      }
+    }
+    return 'download';
   }
 
   saveFile(blob: Blob, filename: string): void {

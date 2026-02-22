@@ -4,8 +4,10 @@ import com.student.service.exception.FileDownloadException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
@@ -28,7 +30,9 @@ public class S3FileService {
         this.fileKey = fileKey;
     }
 
-    public InputStream downloadFile() {
+    public record S3File(InputStream inputStream, String contentType) {}
+
+    public S3File downloadFile() {
         log.info("Starting file download from S3: bucket={}, key={}", bucketName, fileKey);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
@@ -37,7 +41,9 @@ public class S3FileService {
                 .build();
 
         try {
-            return s3Client.getObject(getObjectRequest);
+            ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
+            String contentType = response.response().contentType();
+            return new S3File(response, contentType);
         } catch (S3Exception e) {
             log.error("Error downloading file from S3", e);
             throw new FileDownloadException("S3 Error: " + e.awsErrorDetails().errorMessage(), e);
@@ -47,7 +53,9 @@ public class S3FileService {
         }
     }
 
-    public byte[] downloadFileAsBytes() {
+    public record S3BytesFile(byte[] data, String contentType) {}
+
+    public S3BytesFile downloadFileAsBytes() {
         log.info("Starting byte[] file download from S3: bucket={}, key={}", bucketName, fileKey);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
@@ -55,10 +63,11 @@ public class S3FileService {
                 .key(fileKey)
                 .build();
 
-        try (InputStream inputStream = s3Client.getObject(getObjectRequest)) {
-            byte[] bytes = inputStream.readAllBytes();
+        try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest)) {
+            String contentType = response.response().contentType();
+            byte[] bytes = response.readAllBytes();
             log.info("Byte[] file download completed, size={} bytes", bytes.length);
-            return bytes;
+            return new S3BytesFile(bytes, contentType);
         } catch (S3Exception e) {
             log.error("Error downloading file as bytes from S3", e);
             throw new FileDownloadException("S3 Error: " + e.awsErrorDetails().errorMessage(), e);

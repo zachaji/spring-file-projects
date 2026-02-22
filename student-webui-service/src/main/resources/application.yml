@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  mvc:
+    async:
+      request-timeout: 600000
   application:
     name: student-webui-service
 

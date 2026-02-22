@@ -4,6 +4,7 @@ import com.student.service.exception.FileDownloadException;
 import com.student.service.service.S3FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,22 +25,22 @@ public class FileDownloadController {
 
     private final S3FileService s3FileService;
 
-    @GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/download")
     public ResponseEntity<StreamingResponseBody> downloadFile() {
         log.info("Received request to download file");
 
         try {
-            InputStream inputStream = s3FileService.downloadFile();
+            S3FileService.S3File s3File = s3FileService.downloadFile();
             String fileName = s3FileService.getFileName();
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentDispositionFormData("attachment", fileName);
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDisposition(ContentDisposition.attachment().filename(fileName).build());
+            headers.setContentType(MediaType.parseMediaType(s3File.contentType()));
 
-            log.info("Streaming file: {}", fileName);
+            log.info("Streaming file: {}, contentType={}", fileName, s3File.contentType());
 
             StreamingResponseBody responseBody = outputStream -> {
-                try (inputStream) {
+                try (InputStream inputStream = s3File.inputStream()) {
                     inputStream.transferTo(outputStream);
                     outputStream.flush();
                     log.info("File download completed successfully");
@@ -56,24 +57,24 @@ public class FileDownloadController {
         }
     }
 
-    @GetMapping(value = "/download-bytes", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/download-bytes")
     public ResponseEntity<byte[]> downloadFileAsBytes() {
         log.info("Received request to download file as byte[]");
 
         try {
-            byte[] fileData = s3FileService.downloadFileAsBytes();
+            S3FileService.S3BytesFile s3BytesFile = s3FileService.downloadFileAsBytes();
             String fileName = s3FileService.getFileName();
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentDispositionFormData("attachment", fileName);
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentLength(fileData.length);
+            headers.setContentDisposition(ContentDisposition.attachment().filename(fileName).build());
+            headers.setContentType(MediaType.parseMediaType(s3BytesFile.contentType()));
+            headers.setContentLength(s3BytesFile.data().length);
 
-            log.info("Returning file as byte[]: {}, size={} bytes", fileName, fileData.length);
+            log.info("Returning file as byte[]: {}, size={} bytes, contentType={}", fileName, s3BytesFile.data().length, s3BytesFile.contentType());
 
             return ResponseEntity.ok()
                     .headers(headers)
-                    .body(fileData);
+                    .body(s3BytesFile.data());
 
         } catch (Exception e) {
             log.error("Error downloading file as byte[]", e);
